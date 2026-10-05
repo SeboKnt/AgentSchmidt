@@ -1,0 +1,13 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: agent-schmidt
+profiles:
+- name: cloudrun
+  manifests:
+    rawYaml:
+      - services/freellmapi.yaml
+      - services/hermes.yaml
+      - services/dashboard.yaml
+  deploy:
+    cloudrun: {}

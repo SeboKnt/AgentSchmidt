@@ -1,0 +1,80 @@
+# Cloud Build pipeline for AgentSchmidt with Cloud Deploy
+# Triggers on push to main — deploys services with user-authenticated access.
+
+substitutions:
+  _REGION: 'europe-west1'
+  _ALLOWED_USER: 'user:sebastian.alxr@gmail.com'
+
+steps:
+# 1. Apply Cloud Deploy pipeline and target
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'apply-clouddeploy'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      gcloud deploy apply --file=clouddeploy.yaml --project=$PROJECT_ID --location=$_REGION
+
+# 2. Create a release from the current source
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'create-release'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      RELEASE_NAME="release-${_COMMIT_SHA:0:8}"
+      gcloud deploy releases create $RELEASE_NAME \
+        --delivery-pipeline=agent-schmidt \
+        --region=$_REGION \
+        --source=. \
+        --quiet
+
+# 3. Ensure GCS bucket for Hermes persistent data exists (idempotent)
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'ensure-gcs-bucket'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      gcloud storage buckets describe gs://agentschmidt-hermes-data-$PROJECT_NUMBER >/dev/null 2>&1 || \
+      gcloud storage buckets create gs://agentschmidt-hermes-data-$PROJECT_NUMBER \
+        --project=$PROJECT_ID \
+        --location=$_REGION
+
+# 4. Wait for rollout to complete
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'wait-rollout'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      RELEASE_NAME="release-${_COMMIT_SHA:0:8}"
+      gcloud deploy rollouts wait $RELEASE_NAME \
+        --delivery-pipeline=agent-schmidt \
+        --region=$_REGION \
+        --timeout=600s \
+        --quiet
+
+# 5. All services: authenticated-only (user login required)
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'configure-auth'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      for svc in agentschmidt-freellmapi agentschmidt-hermes agentschmidt-hermes-dashboard; do
+        gcloud run services update $svc \
+          --region=$_REGION \
+          --no-allow-unauthenticated \
+          --quiet
+        gcloud run services add-iam-policy-binding $svc \
+          --region=$_REGION \
+          --member=$_ALLOWED_USER \
+          --role=roles/run.invoker \
+          --quiet
+      done
+
+timeout: '1200s'
+options:
+  dynamic_substitutions: true
+  logging: CLOUD_LOGGING_ONLY

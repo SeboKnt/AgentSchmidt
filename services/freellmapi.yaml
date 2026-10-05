@@ -1,0 +1,44 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: agentschmidt-freellmapi
+  labels:
+    cloud.googleapis.com/location: europe-west1
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: '0'
+        autoscaling.knative.dev/maxScale: '1'
+        run.googleapis.com/startup-cpu-boost: 'true'
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+      - image: ghcr.io/tashfeenahmed/freellmapi:latest
+        ports:
+        - containerPort: 3001
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: "3001"
+        envFrom:
+        - secretRef:
+            name: agentschmidt-freellmapi-encryption-key
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        volumeMounts:
+        - name: freellmapi-data
+          mountPath: /app/server/data
+      volumes:
+      - name: freellmapi-data
+        csi:
+          driver: gcsfuse.run.googleapis.com
+          readOnly: false
+          volumeAttributes:
+            bucketName: agentschmidt-hermes-data-$PROJECT_NUMBER
+            mountOptions: implicit-dirs

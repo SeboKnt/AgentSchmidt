@@ -1,0 +1,47 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: agentschmidt-hermes-dashboard
+  labels:
+    cloud.googleapis.com/location: europe-west1
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: '0'
+        autoscaling.knative.dev/maxScale: '1'
+        run.googleapis.com/startup-cpu-boost: 'true'
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+      - image: nousresearch/hermes-agent:latest
+        command: ["/init"]
+        args: ["dashboard", "--host", "127.0.0.1", "--no-open"]
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1024Mi
+        env:
+        - name: HERMES_UID
+          value: '10000'
+        - name: HERMES_GID
+          value: '10000'
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9119
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        volumeMounts:
+        - name: hermes-dashboard-data
+          mountPath: /opt/data
+      volumes:
+      - name: hermes-dashboard-data
+        csi:
+          driver: gcsfuse.run.googleapis.com
+          readOnly: false
+          volumeAttributes:
+            bucketName: agentschmidt-hermes-data-$PROJECT_NUMBER
+            mountOptions: implicit-dirs

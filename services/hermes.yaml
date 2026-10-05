@@ -1,0 +1,68 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: agentschmidt-hermes
+  labels:
+    cloud.googleapis.com/location: europe-west1
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: '0'
+        autoscaling.knative.dev/maxScale: '1'
+        run.googleapis.com/startup-cpu-boost: 'true'
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+      - image: nousresearch/hermes-agent:latest
+        command: ["/init"]
+        args: ["gateway", "run"]
+        ports:
+        - containerPort: 8642
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 2048Mi
+        env:
+        - name: API_SERVER_ENABLED
+          value: 'true'
+        - name: API_SERVER_HOST
+          value: '0.0.0.0'
+        - name: API_SERVER_PORT
+          value: '8642'
+        envFrom:
+        - secretRef:
+            name: agentschmidt-hermes-api-server-key
+        - name: HERMES_LOG_DIR
+          value: /tmp/hermes-logs
+        - name: S6_LOGGING_SCRIPT
+          value: 'n20 s1000000'
+        - name: HERMES_UID
+          value: '10000'
+        - name: HERMES_GID
+          value: '10000'
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8642
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8642
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: hermes-data
+          mountPath: /opt/data
+      volumes:
+      - name: hermes-data
+        csi:
+          driver: gcsfuse.run.googleapis.com
+          readOnly: false
+          volumeAttributes:
+            bucketName: agentschmidt-hermes-data-$PROJECT_NUMBER
+            mountOptions: implicit-dirs

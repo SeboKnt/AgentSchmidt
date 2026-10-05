@@ -1,0 +1,19 @@
+apiVersion: deploy.cloud.google.com/v1
+kind: DeliveryPipeline
+metadata:
+  name: agent-schmidt
+description: AgentSchmidt deployment pipeline — public images via Cloud Deploy
+serialPipeline:
+  stages:
+  - targetId: agentschmidt-target
+    profiles: []
+
+---
+
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: agentschmidt-target
+description: Cloud Run target for AgentSchmidt services
+run:
+  location: projects/$PROJECT_ID/locations/europe-west1
