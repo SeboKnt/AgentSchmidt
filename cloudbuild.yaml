@@ -23,7 +23,7 @@ steps:
     - '-c'
     - |
       RELEASE_NAME="release-${_COMMIT_SHA:0:8}"
-      gcloud deploy releases create $RELEASE_NAME \
+      gcloud deploy releases create "$RELEASE_NAME" \
         --delivery-pipeline=agent-schmidt \
         --region=$_REGION \
         --source=. \
@@ -49,7 +49,7 @@ steps:
     - '-c'
     - |
       RELEASE_NAME="release-${_COMMIT_SHA:0:8}"
-      gcloud deploy rollouts wait $RELEASE_NAME \
+      gcloud deploy rollouts wait "$RELEASE_NAME" \
         --delivery-pipeline=agent-schmidt \
         --region=$_REGION \
         --timeout=600s \
