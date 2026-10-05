@@ -22,8 +22,8 @@ steps:
   args:
     - '-c'
     - |
-      RELEASE_NAME="release-${_COMMIT_SHA:0:8}"
-      gcloud deploy releases create "$RELEASE_NAME" \
+      release_name="release-${_COMMIT_SHA:0:8}"
+      gcloud deploy releases create "$release_name" \
         --delivery-pipeline=agent-schmidt \
         --region=$_REGION \
         --source=. \
@@ -48,8 +48,8 @@ steps:
   args:
     - '-c'
     - |
-      RELEASE_NAME="release-${_COMMIT_SHA:0:8}"
-      gcloud deploy rollouts wait "$RELEASE_NAME" \
+      release_name="release-${_COMMIT_SHA:0:8}"
+      gcloud deploy rollouts wait "$release_name" \
         --delivery-pipeline=agent-schmidt \
         --region=$_REGION \
         --timeout=600s \
