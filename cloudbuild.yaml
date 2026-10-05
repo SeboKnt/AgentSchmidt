@@ -13,7 +13,7 @@ steps:
   args:
     - '-c'
     - |
-      gcloud deploy apply --file=clouddeploy.yaml --project=$PROJECT_ID --location=$_REGION
+      gcloud deploy apply --file=clouddeploy.yaml --project=$PROJECT_ID --region=$_REGION
 
 # 2. Create a release from the current source
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
