@@ -25,6 +25,9 @@ spec:
           limits:
             cpu: 1000m
             memory: 2048Mi
+        envFrom:
+        - secretRef:
+            name: agentschmidt-hermes-api-server-key
         env:
         - name: API_SERVER_ENABLED
           value: 'true'
@@ -32,9 +35,6 @@ spec:
           value: '0.0.0.0'
         - name: API_SERVER_PORT
           value: '8642'
-        envFrom:
-        - secretRef:
-            name: agentschmidt-hermes-api-server-key
         - name: HERMES_LOG_DIR
           value: /tmp/hermes-logs
         - name: S6_LOGGING_SCRIPT
