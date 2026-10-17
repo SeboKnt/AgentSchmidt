@@ -15,7 +15,29 @@ steps:
     - |
       gcloud deploy apply --file=clouddeploy.yaml --project=$PROJECT_ID --region=$_REGION
 
-# 2. Create a release from the current source
+# 2. Ensure GCS bucket, sync config and prepare Pub/Sub topic
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'setup-infra-and-config'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      # 1. Bucket sicherstellen
+      gcloud storage buckets describe gs://agentschmidt-hermes-data-$PROJECT_NUMBER >/dev/null 2>&1 || \
+      gcloud storage buckets create gs://agentschmidt-hermes-data-$PROJECT_NUMBER \
+        --project=$PROJECT_ID \
+        --location=$_REGION
+
+      # 2. Config per GitOps in den Bucket synchronisieren
+      if [ -f "config/config.yaml" ]; then
+        gcloud storage cp config/config.yaml gs://agentschmidt-hermes-data-$PROJECT_NUMBER/config.yaml
+      fi
+
+      # 3. Pub/Sub Topic vorbereiten
+      gcloud pubsub topics describe agentschmidt-hermes-inbound >/dev/null 2>&1 || \
+      gcloud pubsub topics create agentschmidt-hermes-inbound --project=$PROJECT_ID
+
+# 3. Create a release from the current source
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: 'create-release'
   entrypoint: 'bash'
@@ -28,18 +50,6 @@ steps:
         --region=$_REGION \
         --source=. \
         --quiet
-
-# 3. Ensure GCS bucket for Hermes persistent data exists (idempotent)
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: 'ensure-gcs-bucket'
-  entrypoint: 'bash'
-  args:
-    - '-c'
-    - |
-      gcloud storage buckets describe gs://agentschmidt-hermes-data-$PROJECT_NUMBER >/dev/null 2>&1 || \
-      gcloud storage buckets create gs://agentschmidt-hermes-data-$PROJECT_NUMBER \
-        --project=$PROJECT_ID \
-        --location=$_REGION
 
 # 4. Wait for rollout to complete
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -62,7 +72,7 @@ steps:
   args:
     - '-c'
     - |
-      for svc in agentschmidt-freellmapi agentschmidt-hermes agentschmidt-hermes-dashboard; do
+      for svc in agentschmidt-hermes; do
         gcloud run services update $svc \
           --region=$_REGION \
           --no-allow-unauthenticated \

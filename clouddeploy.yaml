@@ -6,7 +6,8 @@ description: AgentSchmidt deployment pipeline — public images via Cloud Deploy
 serialPipeline:
   stages:
   - targetId: agentschmidt-target
-    profiles: []
+    profiles:
+    - cloudrun
 
 ---
 
@@ -16,4 +17,5 @@ metadata:
   name: agentschmidt-target
 description: Cloud Run target for AgentSchmidt services
 run:
-  location: projects/$PROJECT_ID/locations/europe-west1
+  location: projects/project-ecf5ff03-f941-4f63-a23/locations/europe-west1
+

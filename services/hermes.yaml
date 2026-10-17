@@ -25,9 +25,6 @@ spec:
           limits:
             cpu: 1000m
             memory: 2048Mi
-        envFrom:
-        - secretRef:
-            name: agentschmidt-hermes-api-server-key
         env:
         - name: API_SERVER_ENABLED
           value: 'true'
@@ -43,18 +40,30 @@ spec:
           value: '10000'
         - name: HERMES_GID
           value: '10000'
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8642
-          initialDelaySeconds: 15
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8642
-          initialDelaySeconds: 5
+        - name: API_SERVER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agentschmidt-hermes-api-server-key
+              key: latest
+        - name: GOOGLE_CLOUD_PROJECT
+          value: 'project-ecf5ff03-f941-4f63-a23'
+        - name: VERTEX_AI_PROJECT
+          value: 'project-ecf5ff03-f941-4f63-a23'
+        - name: VERTEX_AI_LOCATION
+          value: 'europe-west1'
+        - name: PUBSUB_TOPIC
+          value: 'agentschmidt-hermes-inbound'
+        startupProbe:
+          failureThreshold: 5
           periodSeconds: 10
+          tcpSocket:
+            port: 8642
+          timeoutSeconds: 240
+        livenessProbe:
+          tcpSocket:
+            port: 8642
+          initialDelaySeconds: 20
+          periodSeconds: 30
         volumeMounts:
         - name: hermes-data
           mountPath: /opt/data
@@ -64,5 +73,5 @@ spec:
           driver: gcsfuse.run.googleapis.com
           readOnly: false
           volumeAttributes:
-            bucketName: agentschmidt-hermes-data-$PROJECT_NUMBER
+            bucketName: agentschmidt-hermes-data-309392925177
             mountOptions: implicit-dirs
