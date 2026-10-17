@@ -5,16 +5,7 @@ substitutions:
   _REGION: 'europe-west1'
 
 steps:
-# 1. Apply Cloud Deploy pipeline and target
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: 'apply-clouddeploy'
-  entrypoint: 'bash'
-  args:
-    - '-c'
-    - |
-      gcloud deploy apply --file=clouddeploy.yaml --project=$PROJECT_ID --region=$_REGION
-
-# 2. Ensure GCS bucket, sync config and prepare Pub/Sub topic
+# 1. Ensure GCS bucket, sync config and prepare Pub/Sub topic
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: 'setup-infra-and-config'
   entrypoint: 'bash'
@@ -36,22 +27,38 @@ steps:
       gcloud pubsub topics describe agentschmidt-hermes-inbound >/dev/null 2>&1 || \
       gcloud pubsub topics create agentschmidt-hermes-inbound --project=$PROJECT_ID
 
-# 3. Create a release from the current source
+# 2. Direct declarative deployment to Cloud Run via Knative YAML
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: 'create-release'
+  id: 'deploy-hermes'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      release_name="rel-$SHORT_SHA"
-      if [ "$release_name" = "rel-" ]; then
-        release_name="rel-$(date +%s)"
-      fi
-      gcloud deploy releases create "$release_name" \
-        --delivery-pipeline=agent-schmidt \
-        --region=$_REGION \
-        --source=. \
-        --quiet
+      gcloud run services replace services/hermes.yaml --region=$_REGION
+
+# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#   id: 'apply-clouddeploy'
+#   entrypoint: 'bash'
+#   args:
+#     - '-c'
+#     - |
+#       gcloud deploy apply --file=clouddeploy.yaml --project=$PROJECT_ID --region=$_REGION
+#
+# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#   id: 'create-release'
+#   entrypoint: 'bash'
+#   args:
+#     - '-c'
+#     - |
+#       release_name="rel-$SHORT_SHA"
+#       if [ "$release_name" = "rel-" ]; then
+#         release_name="rel-$(date +%s)"
+#       fi
+#       gcloud deploy releases create "$release_name" \
+#         --delivery-pipeline=agent-schmidt \
+#         --region=$_REGION \
+#         --source=. \
+#         --quiet
 
 timeout: '600s'
 options:

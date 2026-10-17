@@ -54,16 +54,11 @@ spec:
         - name: PUBSUB_TOPIC
           value: 'agentschmidt-hermes-inbound'
         startupProbe:
-          failureThreshold: 5
+          failureThreshold: 24
           periodSeconds: 10
+          timeoutSeconds: 5
           tcpSocket:
             port: 8642
-          timeoutSeconds: 240
-        livenessProbe:
-          tcpSocket:
-            port: 8642
-          initialDelaySeconds: 20
-          periodSeconds: 30
         volumeMounts:
         - name: hermes-data
           mountPath: /opt/data
