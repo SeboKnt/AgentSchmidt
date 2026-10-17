@@ -43,7 +43,10 @@ steps:
   args:
     - '-c'
     - |
-      release_name="rel-${BUILD_ID:0:8}"
+      release_name="rel-$SHORT_SHA"
+      if [ "$release_name" = "rel-" ]; then
+        release_name="rel-$(date +%s)"
+      fi
       gcloud deploy releases create "$release_name" \
         --delivery-pipeline=agent-schmidt \
         --region=$_REGION \
