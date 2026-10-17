@@ -3,7 +3,6 @@
 
 substitutions:
   _REGION: 'europe-west1'
-  _ALLOWED_USER: 'user:sebastian.alxr@gmail.com'
 
 steps:
 # 1. Apply Cloud Deploy pipeline and target
@@ -44,46 +43,14 @@ steps:
   args:
     - '-c'
     - |
-      release_name="release-${SHORT_SHA:-$BUILD_ID}"
+      release_name="rel-${BUILD_ID:0:8}"
       gcloud deploy releases create "$release_name" \
         --delivery-pipeline=agent-schmidt \
         --region=$_REGION \
         --source=. \
         --quiet
 
-# 4. Wait for rollout to complete
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: 'wait-rollout'
-  entrypoint: 'bash'
-  args:
-    - '-c'
-    - |
-      release_name="release-${SHORT_SHA:-$BUILD_ID}"
-      gcloud deploy rollouts wait "$release_name" \
-        --delivery-pipeline=agent-schmidt \
-        --region=$_REGION \
-        --timeout=600s \
-        --quiet
-
-# 5. All services: authenticated-only (user login required)
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: 'configure-auth'
-  entrypoint: 'bash'
-  args:
-    - '-c'
-    - |
-      for svc in agentschmidt-hermes; do
-        gcloud run services update $svc \
-          --region=$_REGION \
-          --no-allow-unauthenticated \
-          --quiet
-        gcloud run services add-iam-policy-binding $svc \
-          --region=$_REGION \
-          --member=$_ALLOWED_USER \
-          --role=roles/run.invoker \
-          --quiet
-      done
-
-timeout: '1200s'
+timeout: '600s'
 options:
   logging: CLOUD_LOGGING_ONLY
+
