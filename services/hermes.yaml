@@ -37,9 +37,9 @@ spec:
         - name: S6_LOGGING_SCRIPT
           value: 'n20 s1000000'
         - name: HERMES_UID
-          value: '10000'
+          value: '1000'
         - name: HERMES_GID
-          value: '10000'
+          value: '1000'
         - name: API_SERVER_KEY
           valueFrom:
             secretKeyRef:
