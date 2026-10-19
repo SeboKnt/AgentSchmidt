@@ -2,7 +2,6 @@ model:
   provider: vertex
   default: google/gemini-2.0-flash
 
-
 vertex:
   project_id: project-ecf5ff03-f941-4f63-a23
   region: europe-west1
