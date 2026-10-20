@@ -41,8 +41,36 @@ Both use `minInstances=0` (scale to zero) for zero baseline cost.
 │   ├── freellmapi.yaml      # LLM gateway (port 3001, GCS volume)
 │   ├── hermes.yaml          # AI agent (port 8642, GCS volume)
 │   └── dashboard.yaml       # Dashboard (localhost:9119, GCS volume)
+├── config/
+│   └── config.yaml          # Hermes configuration
 └── README.md
 ```
+
+## How to Use Hermes on Cloud Run
+
+### 1. OpenAI-Compatible API Endpoint (Direct & Easiest)
+Cloud Run exposes the Hermes API Server on port `8642` with `API_SERVER_ENABLED=true`.
+
+You can interact with Hermes directly via `curl` or any OpenAI client:
+```bash
+SERVICE_URL=$(gcloud run services describe agentschmidt-hermes --region=europe-west1 --format='value(status.url)')
+API_KEY=$(gcloud secrets versions access latest --secret=agentschmidt-hermes-api-server-key)
+
+curl -X POST "$SERVICE_URL/v1/chat/completions" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "hermes-agent",
+    "messages": [
+      {"role": "user", "content": "Hello Hermes, run a quick status check!"}
+    ]
+  }'
+```
+
+### 2. Using Pub/Sub or Google Chat (Optional)
+If you want asynchronous triggers via Google Cloud Pub/Sub:
+- **Cloud Run Push Subscription**: Create a Cloud Run push subscription targeting `$SERVICE_URL/v1/chat/completions` (or a webhook handler).
+- **Google Chat Bot**: Hermes has a built-in `google_chat` adapter that uses Cloud Pub/Sub pull subscriptions for Google Chat spaces and direct messages (configured via `GOOGLE_CHAT_PROJECT_ID` and `GOOGLE_CHAT_SUBSCRIPTION_NAME`).
 
 ## Cost Control
 

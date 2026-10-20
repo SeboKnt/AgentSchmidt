@@ -23,7 +23,7 @@ steps:
         gcloud storage cp config/config.yaml gs://agentschmidt-hermes-data-$PROJECT_NUMBER/config.yaml
       fi
 
-      # 3. Pub/Sub Topic vorbereiten
+      # 3. Pub/Sub Topic & Push Subscription vorbereiten (falls gewuenscht)
       gcloud pubsub topics describe agentschmidt-hermes-inbound >/dev/null 2>&1 || \
       gcloud pubsub topics create agentschmidt-hermes-inbound --project=$PROJECT_ID
 
