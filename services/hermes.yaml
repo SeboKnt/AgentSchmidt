@@ -21,16 +21,11 @@ spec:
           - "sh"
           - "-c"
           - |
-            echo "Initializing Hermes on local ephemeral storage from GCS..."
+            echo "Initializing Hermes with cloud storage sync..."
             mkdir -p /tmp/hermes /tmp/hermes-logs
             
-            # If config or existing state exists in GCS, copy it over safely
-            if [ -f /opt/data/config.yaml ]; then
-              cp -n /opt/data/config.yaml /tmp/hermes/config.yaml || true
-            fi
-            if [ -d /opt/data/skills ]; then
-              cp -r /opt/data/skills /tmp/hermes/ || true
-            fi
+            # Download config from GCS bucket if it exists
+            gcloud storage cp gs://agentschmidt-hermes-data-309392925177/config.yaml /tmp/hermes/config.yaml 2>/dev/null || true
             
             export HERMES_HOME=/tmp/hermes
             export HERMES_LOG_DIR=/tmp/hermes-logs
@@ -50,6 +45,10 @@ spec:
           value: '0.0.0.0'
         - name: API_SERVER_PORT
           value: '8642'
+        - name: HERMES_HOME
+          value: /tmp/hermes
+        - name: HERMES_LOG_DIR
+          value: /tmp/hermes-logs
         - name: S6_LOGGING_SCRIPT
           value: 'n20 s1000000'
         - name: HERMES_UID
@@ -79,14 +78,3 @@ spec:
           timeoutSeconds: 5
           tcpSocket:
             port: 8642
-        volumeMounts:
-        - name: hermes-data
-          mountPath: /opt/data
-      volumes:
-      - name: hermes-data
-        csi:
-          driver: gcsfuse.run.googleapis.com
-          readOnly: false
-          volumeAttributes:
-            bucketName: agentschmidt-hermes-data-309392925177
-            mountOptions: implicit-dirs,uid=1000,gid=1000
