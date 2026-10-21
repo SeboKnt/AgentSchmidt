@@ -21,14 +21,18 @@ spec:
           - "sh"
           - "-c"
           - |
-            echo "Initializing Hermes with cloud storage sync..."
+            echo "Initializing Hermes with embedded config..."
             mkdir -p /tmp/hermes /tmp/hermes-logs
             
-            # Download config from GCS bucket if it exists
-            gcloud storage cp gs://agentschmidt-hermes-data-309392925177/config.yaml /tmp/hermes/config.yaml 2>/dev/null || true
+            cat << 'EOF' > /tmp/hermes/config.yaml
+            model:
+              provider: vertex
+              default: google/gemini-3.8-flash
             
-            export HERMES_HOME=/tmp/hermes
-            export HERMES_LOG_DIR=/tmp/hermes-logs
+            vertex:
+              project_id: project-ecf5ff03-f941-4f63-a23
+              region: europe-west1
+            EOF
             
             echo "Starting Hermes gateway..."
             exec hermes gateway run
