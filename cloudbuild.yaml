@@ -23,9 +23,23 @@ steps:
         gcloud storage cp config/config.yaml gs://agentschmidt-hermes-data-$PROJECT_NUMBER/config.yaml
       fi
 
-      # 3. Pub/Sub Topic & Push Subscription vorbereiten (falls gewuenscht)
+      # 3. Pub/Sub Topic & Pull Subscription vorbereiten
       gcloud pubsub topics describe agentschmidt-hermes-inbound >/dev/null 2>&1 || \
       gcloud pubsub topics create agentschmidt-hermes-inbound --project=$PROJECT_ID
+
+      # Google Chat Push Service Account Publisher-Rechte auf Topic erteilen
+      gcloud pubsub topics add-iam-policy-binding agentschmidt-hermes-inbound \
+        --project=$PROJECT_ID \
+        --member='serviceAccount:chat-api-push@system.gserviceaccount.com' \
+        --role='roles/pubsub.publisher' >/dev/null 2>&1 || true
+
+      # Pull-Subscription fuer Hermes erstellen
+      gcloud pubsub subscriptions describe agentschmidt-hermes-inbound-sub >/dev/null 2>&1 || \
+      gcloud pubsub subscriptions create agentschmidt-hermes-inbound-sub \
+        --project=$PROJECT_ID \
+        --topic=agentschmidt-hermes-inbound \
+        --ack-deadline=60 \
+        --message-retention-duration=7d
 
 # 2. Direct declarative deployment to Cloud Run via Knative YAML
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'

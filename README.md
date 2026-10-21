@@ -48,7 +48,13 @@ Both use `minInstances=0` (scale to zero) for zero baseline cost.
 
 ## How to Use Hermes on Cloud Run
 
-### 1. OpenAI-Compatible API Endpoint (Direct & Easiest)
+### 1. Google Chat Bot via Pub/Sub
+Hermes listens to incoming events via the Google Cloud Pub/Sub pull subscription `agentschmidt-hermes-inbound-sub`.
+- Google Chat API sends incoming user events to `projects/project-ecf5ff03-f941-4f63-a23/topics/agentschmidt-hermes-inbound`.
+- Hermes processes messages and replies directly in the Google Chat space or 1:1 conversation.
+- Allowed users configured: `sebastian.alxr@gmail.com`.
+
+### 2. OpenAI-Compatible API Endpoint (Alternative)
 Cloud Run exposes the Hermes API Server on port `8642` with `API_SERVER_ENABLED=true`.
 
 You can interact with Hermes directly via `curl` or any OpenAI client:
