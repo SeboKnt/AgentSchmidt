@@ -17,7 +17,16 @@ spec:
       timeoutSeconds: 300
       containers:
       - image: nousresearch/hermes-agent:latest
-        args: ["gateway", "run"]
+        args:
+          - "sh"
+          - "-c"
+          - |
+            mkdir -p /tmp/hermes
+            if [ -f /opt/data/config.yaml ]; then
+              cp /opt/data/config.yaml /tmp/hermes/config.yaml
+            fi
+            export HERMES_HOME=/tmp/hermes
+            exec hermes gateway run
         ports:
         - containerPort: 8642
         resources:
