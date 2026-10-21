@@ -21,18 +21,19 @@ spec:
           - "sh"
           - "-c"
           - |
-            echo "Initializing Hermes with embedded config..."
+            echo "Initializing Hermes with clean config..."
             mkdir -p /tmp/hermes /tmp/hermes-logs
             
             cat << 'EOF' > /tmp/hermes/config.yaml
             model:
               provider: vertex
-              default: google/gemini-3.8-flash
+              default: gemini-3.5-flash-lite
             
             vertex:
               project_id: project-ecf5ff03-f941-4f63-a23
               region: europe-west1
             EOF
+            sed -i 's/^            //' /tmp/hermes/config.yaml
             
             echo "Starting Hermes gateway..."
             exec hermes gateway run
