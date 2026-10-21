@@ -21,11 +21,21 @@ spec:
           - "sh"
           - "-c"
           - |
-            mkdir -p /tmp/hermes
+            echo "Initializing Hermes on local ephemeral storage from GCS..."
+            mkdir -p /tmp/hermes /tmp/hermes-logs
+            
+            # If config or existing state exists in GCS, copy it over safely
             if [ -f /opt/data/config.yaml ]; then
-              cp /opt/data/config.yaml /tmp/hermes/config.yaml
+              cp -n /opt/data/config.yaml /tmp/hermes/config.yaml || true
             fi
+            if [ -d /opt/data/skills ]; then
+              cp -r /opt/data/skills /tmp/hermes/ || true
+            fi
+            
             export HERMES_HOME=/tmp/hermes
+            export HERMES_LOG_DIR=/tmp/hermes-logs
+            
+            echo "Starting Hermes gateway..."
             exec hermes gateway run
         ports:
         - containerPort: 8642
@@ -40,8 +50,6 @@ spec:
           value: '0.0.0.0'
         - name: API_SERVER_PORT
           value: '8642'
-        - name: HERMES_LOG_DIR
-          value: /tmp/hermes-logs
         - name: S6_LOGGING_SCRIPT
           value: 'n20 s1000000'
         - name: HERMES_UID
